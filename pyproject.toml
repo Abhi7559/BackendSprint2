@@ -1,0 +1,22 @@
+[project]
+name = "day2"
+version = "0.1.0"
+description = "Sprint 2 Day 2 - Film Review Platform API"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "asyncpg>=0.31.0",
+    "fastapi[standard]>=0.115.0",
+    "greenlet>=3.5.6",
+    "pydantic>=2.0.0",
+    "pydantic-settings>=2.0.0",
+    "sqlalchemy>=2.1.1",
+    "uvicorn>=0.30.0",
+    "alembic>=1.13.0",
+]
+
+[dependency-groups]
+dev = [
+    "mypy>=1.10.0",
+    "pytest>=8.0.0",
+]
