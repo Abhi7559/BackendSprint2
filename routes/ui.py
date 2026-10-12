@@ -23,8 +23,6 @@ router = APIRouter(
 
 @router.get("/films", response_class=HTMLResponse)
 async def get_films_page(request: Request):
-    """
-    """
     return templates.TemplateResponse(
         request=request,
         name="films.html",
