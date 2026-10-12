@@ -1,0 +1,30 @@
+{% if films and films|length > 0 %}
+    {% for item in films %}
+    <div class="film-card">
+        <div>
+            <h2 class="film-title">{{ item.film.title }}</h2>
+            <div class="film-meta">
+                <span class="badge-genre">{{ item.film.genre }}</span>
+                <span>{{ item.film.release_year }}</span>
+            </div>
+            <div class="rating-badge">
+                <span>★</span>
+                <span>
+                    {% if item.average_rating is not none %}
+                        {{ "%.1f"|format(item.average_rating) }} / 5
+                    {% else %}
+                        No ratings yet
+                    {% endif %}
+                </span>
+            </div>
+        </div>
+        <div class="film-director">
+            Dir. {{ item.film.director }}
+        </div>
+    </div>
+    {% endfor %}
+{% else %}
+    <div class="empty-state">
+        <p>No films found matching your search term.</p>
+    </div>
+{% endif %}

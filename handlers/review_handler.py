@@ -40,8 +40,13 @@ class ReviewHandler:
     ) -> Review:
         return await review_service.update_review(session, review_id, review_data, current_user_dict)
 
-    async def delete_review(self, session: AsyncSession, review_id: UUID) -> bool:
-        return await review_service.delete_review(session, review_id)
+    async def delete_review(
+        self,
+        session: AsyncSession,
+        review_id: UUID,
+        current_user_dict: dict | None = None,
+    ) -> bool:
+        return await review_service.delete_review(session, review_id, current_user_dict)
 
 
 review_handler = ReviewHandler()

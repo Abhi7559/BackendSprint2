@@ -10,11 +10,21 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - DATABASE_URL=postgresql+asyncpg://user:password@db:5432/film_review
+      - REDIS_URL=redis://redis:6379/0
       - RUN_SEED=true
     depends_on:
       db:
         condition: service_healthy
+      redis:
+        condition: service_started
     command: ["uv", "run", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+
+  redis:
+    image: redis:7-alpine
+    container_name: film_review_redis_day4
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
 
   db:
     image: postgres:16-alpine

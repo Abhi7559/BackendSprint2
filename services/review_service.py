@@ -103,15 +103,17 @@ class ReviewService:
         if not review:
             raise ReviewNotFoundError(review_id=review_id)
 
-        # Check ownership if current_user_dict is provided
+        # Check ownership unless admin
         if current_user_dict:
-            user = await user_dao.get_by_username(session, current_user_dict["username"])
-            current_user_id = user.id if user else current_user_dict.get("user_id")
-            if current_user_id and review.user_id != current_user_id:
-                logger.warning(
-                    f"User {current_user_id} attempted to modify review {review_id} owned by another user."
-                )
-                raise UnauthorisedReviewAccessError(review_id=review_id, user_id=current_user_id)
+            is_admin = current_user_dict.get("role") == "admin"
+            if not is_admin:
+                user = await user_dao.get_by_username(session, current_user_dict["username"])
+                current_user_id = user.id if user else current_user_dict.get("user_id")
+                if current_user_id and review.user_id != current_user_id:
+                    logger.warning(
+                        f"User {current_user_id} attempted to modify review {review_id} owned by another user."
+                    )
+                    raise UnauthorisedReviewAccessError(review_id=review_id, user_id=current_user_id)
 
         logger.info(f"Updating review {review_id}.")
         updated = await review_dao.update(
@@ -126,10 +128,27 @@ class ReviewService:
         logger.info(f"Review {review_id} updated successfully.")
         return updated
 
-    async def delete_review(self, session: AsyncSession, review_id: UUID) -> bool:
+    async def delete_review(
+        self,
+        session: AsyncSession,
+        review_id: UUID,
+        current_user_dict: dict | None = None,
+    ) -> bool:
         review = await review_dao.get_by_id(session, review_id)
         if not review:
             raise ReviewNotFoundError(review_id=review_id)
+
+        # Check ownership unless admin
+        if current_user_dict:
+            is_admin = current_user_dict.get("role") == "admin"
+            if not is_admin:
+                user = await user_dao.get_by_username(session, current_user_dict["username"])
+                current_user_id = user.id if user else current_user_dict.get("user_id")
+                if current_user_id and review.user_id != current_user_id:
+                    logger.warning(
+                        f"User {current_user_id} attempted to delete review {review_id} owned by another user."
+                    )
+                    raise UnauthorisedReviewAccessError(review_id=review_id, user_id=current_user_id)
 
         await review_dao.delete(session, review_id)
         logger.info(f"Review {review_id} deleted successfully.")

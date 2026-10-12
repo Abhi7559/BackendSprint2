@@ -13,11 +13,13 @@ from fastapi.responses import Response
 from core.config import settings
 from core.logger import set_request_id, setup_logging
 from exceptions.handlers import register_exception_handlers
-from routes import films, reviews, users
+from routes import films, reviews, ui, users
 
 from database.base import Base
 from database.engine import engine
 import models  # noqa: F401 - ensure models are registered with Base.metadata
+
+from database.redis import close_redis, init_redis
 
 # Initialize structured JSON logging
 setup_logging()
@@ -26,8 +28,13 @@ setup_logging()
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     print(f"Application started - API Version: {settings.API_VERSION}")
+    try:
+        await init_redis()
+    except Exception as e:
+        print(f"Redis initialization warning (will retry on demand): {e}")
     yield
     print("Application shutting down")
+    await close_redis()
 
 
 app = FastAPI(
@@ -61,6 +68,9 @@ api_prefix = f"/api/{settings.API_VERSION}"
 app.include_router(films.router, prefix=api_prefix)
 app.include_router(reviews.router, prefix=api_prefix)
 app.include_router(users.router, prefix=api_prefix)
+
+# Server-rendered HTML UI router (completely separate from JSON API routes)
+app.include_router(ui.router)
 
 
 @app.get("/health", tags=["Health"])

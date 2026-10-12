@@ -48,6 +48,25 @@ class FilmDAO:
         result = await session.execute(stmt)
         return result.scalars().all()
 
+    async def search(
+        self,
+        session: AsyncSession,
+        query: str | None = None,
+    ) -> Sequence[Film]:
+        """
+        Search films by title or genre matching query string.
+        Excludes soft-deleted films.
+        """
+        stmt = select(Film).where(Film.is_deleted == False)  # noqa: E712
+        if query and query.strip():
+            search_term = f"%{query.strip()}%"
+            stmt = stmt.where(
+                (Film.title.ilike(search_term)) | (Film.genre.ilike(search_term))
+            )
+        stmt = stmt.order_by(Film.title.asc())
+        result = await session.execute(stmt)
+        return result.scalars().all()
+
     # Alias for backward-compatibility with existing calls
     async def get_all(
         self,

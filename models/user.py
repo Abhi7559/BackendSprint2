@@ -17,9 +17,10 @@ class User(Base):
         primary_key=True,
         default=uuid.uuid4,
     )
-    username: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
+    username: Mapped[str] = mapped_column(String(100), nullable=False, unique=True, index=True)
     email: Mapped[str] = mapped_column(String(200), nullable=False, unique=True, index=True)
-    role: Mapped[str] = mapped_column(String(50), nullable=False, default="user")
+    role: Mapped[str] = mapped_column(String(50), nullable=False, default="member")
+    password_hash: Mapped[str] = mapped_column(String(255), nullable=False, default="")
 
     # 1-to-many relationship: One user has many reviews
     reviews: Mapped[list["Review"]] = relationship(

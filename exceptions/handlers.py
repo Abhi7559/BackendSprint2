@@ -10,7 +10,10 @@ from exceptions.domain import (
     UnauthorisedReviewAccessError,
     FilmHasActiveReviewsError,
     EmailAlreadyExistsError,
+    UsernameAlreadyExistsError,
     InvalidCredentialsError,
+    InvalidTokenError,
+    ForbiddenError,
 )
 
 logger = logging.getLogger(__name__)
@@ -18,6 +21,53 @@ logger = logging.getLogger(__name__)
 
 def register_exception_handlers(app: FastAPI) -> None:
     """Register centralized exception handlers for domain exceptions on FastAPI."""
+
+    @app.exception_handler(ForbiddenError)
+    async def forbidden_error_handler(request: Request, exc: ForbiddenError) -> JSONResponse:
+        logger.warning(
+            f"ForbiddenError handled: {exc}",
+            extra={"request_id": get_request_id()},
+        )
+        return JSONResponse(
+            status_code=403,
+            content={
+                "type": "ForbiddenError",
+                "message": str(exc),
+                "detail": {"detail": exc.detail},
+            },
+        )
+
+    @app.exception_handler(UsernameAlreadyExistsError)
+    async def username_already_exists_handler(request: Request, exc: UsernameAlreadyExistsError) -> JSONResponse:
+        logger.warning(
+            f"UsernameAlreadyExistsError handled: {exc}",
+            extra={"request_id": get_request_id()},
+        )
+        return JSONResponse(
+            status_code=400,
+            content={
+                "type": "UsernameAlreadyExistsError",
+                "message": str(exc),
+                "detail": {
+                    "username": exc.username,
+                },
+            },
+        )
+
+    @app.exception_handler(InvalidTokenError)
+    async def invalid_token_handler(request: Request, exc: InvalidTokenError) -> JSONResponse:
+        logger.warning(
+            f"InvalidTokenError handled: {exc}",
+            extra={"request_id": get_request_id()},
+        )
+        return JSONResponse(
+            status_code=401,
+            content={
+                "type": "InvalidTokenError",
+                "message": str(exc),
+                "detail": {"detail": exc.detail},
+            },
+        )
 
     @app.exception_handler(EmailAlreadyExistsError)
     async def email_already_exists_handler(request: Request, exc: EmailAlreadyExistsError) -> JSONResponse:

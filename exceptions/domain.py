@@ -1,3 +1,12 @@
+from enum import Enum
+
+
+class UserRole(str, Enum):
+    ADMIN = "admin"
+    CRITIC = "critic"
+    VIEWER = "viewer"
+
+
 class DomainError(Exception):
     """Base exception for all domain business errors."""
     pass
@@ -47,7 +56,28 @@ class EmailAlreadyExistsError(DomainError):
         super().__init__(f"Email '{email}' is already registered.")
 
 
+class UsernameAlreadyExistsError(DomainError):
+    """Raised when registering with a username that is already in use."""
+    def __init__(self, username: str):
+        self.username = username
+        super().__init__(f"Username '{username}' is already taken.")
+
+
 class InvalidCredentialsError(DomainError):
     """Raised when authentication credentials are invalid."""
     def __init__(self):
-        super().__init__("Invalid email or password.")
+        super().__init__("Invalid username or password.")
+
+
+class InvalidTokenError(DomainError):
+    """Raised when JWT token is expired, invalid, or malformed."""
+    def __init__(self, detail: str = "Invalid or expired token."):
+        self.detail = detail
+        super().__init__(detail)
+
+
+class ForbiddenError(DomainError):
+    """Raised when user does not have sufficient role/permissions (403)."""
+    def __init__(self, detail: str = "Access forbidden: insufficient role permissions."):
+        self.detail = detail
+        super().__init__(detail)

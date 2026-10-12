@@ -33,9 +33,27 @@ class UserDAO:
         result = await session.execute(stmt)
         return result.scalar_one_or_none()
 
-    async def create(self, session: AsyncSession, username: str, email: str, role: str = "user") -> User:
-        """Create a new user record in the database."""
-        user = User(username=username, email=email, role=role)
+    async def get_by_username_or_email(self, session: AsyncSession, identifier: str) -> User | None:
+        """Fetch user by username or email for login flexibility."""
+        stmt = select(User).where((User.username == identifier) | (User.email == identifier))
+        result = await session.execute(stmt)
+        return result.scalar_one_or_none()
+
+    async def create(
+        self,
+        session: AsyncSession,
+        username: str,
+        email: str,
+        role: str = "user",
+        password_hash: str = "",
+    ) -> User:
+        """Create a new user record in PostgreSQL."""
+        user = User(
+            username=username,
+            email=email,
+            role=role,
+            password_hash=password_hash,
+        )
         session.add(user)
         await session.commit()
         await session.refresh(user)

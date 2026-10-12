@@ -19,6 +19,8 @@ class Settings(BaseSettings):
     TOKEN_REFRESH_TOKEN_EXPIRE_DAYS: int = Field(description="Refresh token expiry duration in days")
     CORS_ORIGINS: list[str] = Field(default=["http://localhost:3000"], description="Allowed CORS origins")
     API_VERSION: str = Field(description="API version string")
+    REDIS_URL: str = Field(default="redis://localhost:6379/0", description="Redis connection URL")
+    FILM_LIST_CACHE_TTL_SECONDS: int = Field(default=300, description="Cache TTL for film listings in seconds")
 
 
 # Single shared configuration object instantiated once at import time
