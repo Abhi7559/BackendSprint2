@@ -5,13 +5,24 @@
   "scripts": {
     "dev": "next dev -p 3000",
     "prebuild": "node scripts/pre-deployment.js",
-    "test": "node --test tests/frontend.test.js",
+    "test": "node --test tests/frontend.test.js tests/secrets.test.js",
+    "build:analyze": "cross-env ANALYZE=true next build",
     "build": "next build",
     "start": "next start -p 3000"
   },
   "dependencies": {
+    "@aws-sdk/client-secrets-manager": "^3.1169.0",
     "next": "^14.2.5",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "server-only": "^0.0.1"
+  },
+  "devDependencies": {
+    "@next/bundle-analyzer": "^14.2.35",
+    "@types/node": "^20.19.43",
+    "@types/react": "^18.3.31",
+    "@types/react-dom": "^18.3.7",
+    "cross-env": "^10.1.0",
+    "typescript": "^5.9.3"
   }
 }

@@ -47,3 +47,4 @@ def check_secrets() -> None:
 
 if __name__ == "__main__":
     check_secrets()
+

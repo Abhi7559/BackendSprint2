@@ -138,3 +138,4 @@ def reset_secrets_cache() -> None:
     """Helper for testing to reset the process-level in-memory cache."""
     global _CACHED_SECRETS
     _CACHED_SECRETS = None
+

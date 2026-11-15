@@ -87,3 +87,4 @@ Or with pytest:
 uv run pytest tests/test_secrets_manager.py
 ```
 All unit tests mock `boto3` calls with `unittest.mock.patch`, requiring zero connection to real AWS or Floci.
+

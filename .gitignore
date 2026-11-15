@@ -23,3 +23,7 @@ htmlcov/
 frontend/node_modules/
 frontend/.next/
 
+# Temporary secret files
+*-secrets.json
+*.secret.json
+
