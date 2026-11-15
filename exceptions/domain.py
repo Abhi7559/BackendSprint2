@@ -81,3 +81,19 @@ class ForbiddenError(DomainError):
     def __init__(self, detail: str = "Access forbidden: insufficient role permissions."):
         self.detail = detail
         super().__init__(detail)
+
+
+class StorageFileNotFoundError(DomainError):
+    """Raised when an object/file requested from S3 storage is not found."""
+    def __init__(self, key: str, bucket: str):
+        self.key = key
+        self.bucket = bucket
+        super().__init__(f"File '{key}' was not found in storage bucket '{bucket}'.")
+
+
+class StorageOperationError(DomainError):
+    """Raised when an S3 storage operation fails."""
+    def __init__(self, message: str, original_error: Exception | None = None):
+        self.original_error = original_error
+        super().__init__(message)
+

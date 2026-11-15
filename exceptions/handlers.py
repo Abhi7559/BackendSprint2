@@ -14,6 +14,8 @@ from exceptions.domain import (
     InvalidCredentialsError,
     InvalidTokenError,
     ForbiddenError,
+    StorageFileNotFoundError,
+    StorageOperationError,
 )
 
 logger = logging.getLogger(__name__)
@@ -185,5 +187,37 @@ def register_exception_handlers(app: FastAPI) -> None:
                 "detail": {
                     "film_id": str(exc.film_id),
                 },
+            },
+        )
+
+    @app.exception_handler(StorageFileNotFoundError)
+    async def storage_file_not_found_handler(request: Request, exc: StorageFileNotFoundError) -> JSONResponse:
+        logger.warning(
+            f"StorageFileNotFoundError handled: {exc}",
+            extra={"request_id": get_request_id()},
+        )
+        return JSONResponse(
+            status_code=404,
+            content={
+                "type": "StorageFileNotFoundError",
+                "message": str(exc),
+                "detail": {
+                    "key": exc.key,
+                    "bucket": exc.bucket,
+                },
+            },
+        )
+
+    @app.exception_handler(StorageOperationError)
+    async def storage_operation_error_handler(request: Request, exc: StorageOperationError) -> JSONResponse:
+        logger.error(
+            f"StorageOperationError handled: {exc}",
+            extra={"request_id": get_request_id()},
+        )
+        return JSONResponse(
+            status_code=500,
+            content={
+                "type": "StorageOperationError",
+                "message": str(exc),
             },
         )

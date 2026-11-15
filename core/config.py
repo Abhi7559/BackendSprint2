@@ -45,6 +45,13 @@ class Settings(BaseSettings):
     AWS_SECRETS_ENDPOINT_URL: str = Field(default="http://localhost:4566", description="Floci / Local AWS endpoint")
     AWS_DEFAULT_REGION: str = Field(default="us-east-1", description="AWS region")
 
+    # AWS S3 Storage settings
+    S3_BUCKET_NAME: str = Field(default="film-review-assets-local", description="S3 bucket name for film assets")
+    S3_ENDPOINT_URL: str = Field(default="http://localhost:4566", description="S3 endpoint URL (Floci/AWS)")
+    S3_REGION: str = Field(default="us-east-1", description="S3 region")
+    AWS_ACCESS_KEY_ID: str = Field(default="test", description="AWS access key ID for local Floci")
+    AWS_SECRET_ACCESS_KEY: str = Field(default="test", description="AWS secret access key for local Floci")
+
     @property
     def DATABASE_URL(self) -> str:
         """
