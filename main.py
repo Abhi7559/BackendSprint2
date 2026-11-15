@@ -14,7 +14,7 @@ from core.config import settings
 from core.logger import set_request_id, setup_logging
 from core.secrets import get_secrets
 from exceptions.handlers import register_exception_handlers
-from routes import films, reviews, ui, users
+from routes import films, reviews, storage, ui, users
 
 from database.base import Base
 from database.engine import engine
@@ -108,6 +108,7 @@ api_prefix = f"/api/{settings.API_VERSION}"
 app.include_router(films.router, prefix=api_prefix)
 app.include_router(reviews.router, prefix=api_prefix)
 app.include_router(users.router, prefix=api_prefix)
+app.include_router(storage.router, prefix=api_prefix)
 
 # Server-rendered HTML UI router (completely separate from JSON API routes)
 app.include_router(ui.router)
