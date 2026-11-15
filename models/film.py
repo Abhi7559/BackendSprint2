@@ -22,6 +22,8 @@ class Film(Base):
     genre: Mapped[str] = mapped_column(String(100), nullable=False)
     director: Mapped[str] = mapped_column(String(200), nullable=False)
     is_deleted: Mapped[bool] = mapped_column(default=False, nullable=False)
+    review_count: Mapped[int] = mapped_column(default=0, nullable=False)
+    average_rating: Mapped[float | None] = mapped_column(nullable=True)
 
     # 1-to-many relationship: One film has many reviews
     reviews: Mapped[list["Review"]] = relationship(

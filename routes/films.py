@@ -1,5 +1,6 @@
+from math import ceil
 from uuid import UUID
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -19,6 +20,12 @@ from schemas.film import (
     FilmUpdate,
     ReleaseWindow,
 )
+from schemas.pagination import (
+    CursorPageResponse,
+    FilmFilterParams,
+    PaginatedResponse,
+    PaginationParams,
+)
 
 router = APIRouter(
     prefix="/films",
@@ -27,33 +34,49 @@ router = APIRouter(
 )
 
 
-@router.get("", response_model=FilmListResponse)
+@router.get("", response_model=PaginatedResponse[FilmResponse])
 async def get_films(
-    genre: str | None = None,
-    start_year: int | None = None,
-    end_year: int | None = None,
-    config: Settings = Depends(get_config),
+    filters: FilmFilterParams = Depends(),
+    pagination: PaginationParams = Depends(),
     db: AsyncSession = Depends(get_db),
-    redis: Redis = Depends(get_redis),
     trace_id: str = Depends(get_trace_id),
 ):
     """
-    Retrieve all films with optional genre and year-range filters.
-    Read-through cache powered by Redis with DB fallback.
+    Retrieve films with offset-based pagination and multi-field filters:
+    - genre: exact match
+    - from_year / to_year: release year range (individually optional)
+    - director: case-insensitive substring match
+    The underlying database query only fetches the requested page of records.
     """
-    films = await film_handler.get_films(
-        db,
-        redis=redis,
-        genre=genre,
-        start_year=start_year,
-        end_year=end_year,
+    films, total = await film_handler.get_films_paginated(db, filters, pagination)
+    total_pages = ceil(total / pagination.page_size) if total > 0 else 0
+
+    return PaginatedResponse(
+        items=films,
+        page=pagination.page,
+        page_size=pagination.page_size,
+        total=total,
+        total_pages=total_pages,
     )
-    return {
-        "status": "success",
-        "trace_id": trace_id,
-        "total": len(films),
-        "data": films,
-    }
+
+
+@router.get("/cursor", response_model=CursorPageResponse[FilmResponse])
+async def get_films_cursor(
+    cursor: str | None = Query(default=None, description="Opaque next_cursor token returned from previous page"),
+    limit: int = Query(default=10, ge=1, le=100, description="Items per batch"),
+    genre: str | None = Query(default=None, description="Optional exact genre filter"),
+    db: AsyncSession = Depends(get_db),
+    trace_id: str = Depends(get_trace_id),
+):
+    """
+    Retrieve films using cursor-based pagination as an alternative mode.
+    Returns next_cursor (null when no further pages exist) which is opaque to the client.
+    """
+    items, next_cursor = await film_handler.get_films_by_cursor(db, cursor=cursor, limit=limit, genre=genre)
+    return CursorPageResponse(
+        items=items,
+        next_cursor=next_cursor,
+    )
 
 
 @router.get("/{film_id}", response_model=FilmResponse)
@@ -107,6 +130,7 @@ async def delete_film(
         "film_id": film_id,
         "trace_id": trace_id,
     }
+
 
 
 @router.post("/filter-by-window")

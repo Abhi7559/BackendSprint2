@@ -28,6 +28,7 @@ Expected final state:
 
 import asyncio
 from sqlalchemy import select
+from core.security import hash_password
 from database.engine import SessionLocal
 from models.film import Film
 from models.review import Review
@@ -40,16 +41,38 @@ SEED_USERS = [
         "username": "admin_sarah",
         "email": "sarah.admin@example.com",
         "role": "admin",
+        "password": "AdminPassword123!",
     },
     {
         "username": "critic_marcus",
         "email": "marcus.critic@example.com",
         "role": "reviewer",
+        "password": "CriticPassword123!",
     },
     {
         "username": "cinephile_elena",
         "email": "elena.member@example.com",
         "role": "member",
+        "password": "ViewerPassword123!",
+    },
+    # Next.js Frontend Demo Preset Accounts:
+    {
+        "username": "Abhishek1",
+        "email": "abhishek1@example.com",
+        "role": "admin",
+        "password": "AdminPassword123!",
+    },
+    {
+        "username": "critic_user",
+        "email": "critic_user@example.com",
+        "role": "critic",
+        "password": "CriticPassword123!",
+    },
+    {
+        "username": "viewer_user",
+        "email": "viewer_user@example.com",
+        "role": "viewer",
+        "password": "ViewerPassword123!",
     },
 ]
 
@@ -121,7 +144,7 @@ SEED_REVIEWS = [
     {
         "user_email": "marcus.critic@example.com",
         "film_key": ("Interstellar", 2014),
-        "rating": 9,
+        "rating": 5,
         "review_body": (
             "A breathtaking visual and emotional odyssey through space and time. "
             "Hans Zimmer's pipe organ score elevates every single sequence into sheer wonder."
@@ -130,7 +153,7 @@ SEED_REVIEWS = [
     {
         "user_email": "elena.member@example.com",
         "film_key": ("Blade Runner 2049", 2017),
-        "rating": 10,
+        "rating": 5,
         "review_body": (
             "Roger Deakins' cinematography is immaculate in every frame. "
             "A slow-burning, meditative sci-fi masterpiece that expands on the original wonderfully."
@@ -139,7 +162,7 @@ SEED_REVIEWS = [
     {
         "user_email": "sarah.admin@example.com",
         "film_key": ("The Godfather", 1972),
-        "rating": 10,
+        "rating": 5,
         "review_body": (
             "The quintessential American crime saga. "
             "Marlon Brando and Al Pacino deliver career-defining performances with unmatched narrative depth."
@@ -148,7 +171,7 @@ SEED_REVIEWS = [
     {
         "user_email": "marcus.critic@example.com",
         "film_key": ("Parasite", 2019),
-        "rating": 10,
+        "rating": 5,
         "review_body": (
             "Brilliantly crafted social satire that morphs into a nail-biting thriller seamlessly. "
             "Every camera angle and set design choice carries deliberate symbolic weight."
@@ -157,7 +180,7 @@ SEED_REVIEWS = [
     {
         "user_email": "elena.member@example.com",
         "film_key": ("Mad Max: Fury Road", 2015),
-        "rating": 9,
+        "rating": 5,
         "review_body": (
             "Relentless kinetic energy and practical stunt choreography at its finest. "
             "A masterclass in visual storytelling where action propels character development relentlessly."
@@ -177,7 +200,9 @@ async def seed_database() -> None:
             created_users_count = 0
 
             for user_data in SEED_USERS:
-                stmt = select(User).where(User.email == user_data["email"])
+                stmt = select(User).where(
+                    (User.email == user_data["email"]) | (User.username == user_data["username"])
+                )
                 existing_user = (await session.execute(stmt)).scalar_one_or_none()
 
                 if existing_user:
@@ -188,6 +213,7 @@ async def seed_database() -> None:
                         username=user_data["username"],
                         email=user_data["email"],
                         role=user_data["role"],
+                        password_hash=hash_password(user_data.get("password", "DefaultPassword123!")),
                     )
                     session.add(user)
                     await session.flush()

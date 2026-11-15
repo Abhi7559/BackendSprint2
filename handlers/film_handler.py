@@ -30,6 +30,23 @@ class FilmHandler:
             end_year=end_year,
         )
 
+    async def get_films_paginated(
+        self,
+        session: AsyncSession,
+        filters,
+        pagination,
+    ) -> tuple[list[Film], int]:
+        return await film_service.get_films_paginated(session, filters, pagination)
+
+    async def get_films_by_cursor(
+        self,
+        session: AsyncSession,
+        cursor: str | None = None,
+        limit: int = 10,
+        genre: str | None = None,
+    ) -> tuple[list[Film], str | None]:
+        return await film_service.get_films_by_cursor(session, cursor, limit, genre)
+
     async def get_film_by_id(self, session: AsyncSession, film_id: UUID) -> Film:
         return await film_service.get_film_by_id(session, film_id)
 

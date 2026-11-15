@@ -11,6 +11,7 @@ from dao.review_dao import review_dao
 from exceptions.domain import FilmHasActiveReviewsError, FilmNotFoundError
 from models.film import Film
 from schemas.film import FilmCreate, FilmResponse, FilmUpdate
+from schemas.pagination import FilmFilterParams, PaginationParams
 
 logger = logging.getLogger(__name__)
 
@@ -167,9 +168,31 @@ class FilmService:
             raise FilmHasActiveReviewsError(film_id=film_id)
 
         await film_dao.soft_delete(session, film_id)
-        logger.info(f"Film {film_id} soft-deleted successfully.")
         await self.invalidate_film_caches(redis)
+        logger.info(f"Film {film_id} soft-deleted successfully.")
         return True
+
+    async def get_films_paginated(
+        self,
+        session: AsyncSession,
+        filters: FilmFilterParams,
+        pagination: PaginationParams,
+    ) -> tuple[list[Film], int]:
+        """Fetch paginated films with dynamic filtering directly through FilmDAO."""
+        films, total = await film_dao.list_paginated(session, filters, pagination)
+        return list(films), total
+
+    async def get_films_by_cursor(
+        self,
+        session: AsyncSession,
+        cursor: str | None = None,
+        limit: int = 10,
+        genre: str | None = None,
+    ) -> tuple[list[Film], str | None]:
+        """Fetch cursor-paginated films directly through FilmDAO."""
+        films, next_cursor = await film_dao.list_by_cursor(session, cursor, limit, genre)
+        return list(films), next_cursor
 
 
 film_service = FilmService()
+

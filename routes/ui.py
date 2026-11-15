@@ -40,17 +40,8 @@ async def search_films_fragment(
     Queries the existing DAO layer and calculates average rating for each film.
     Never returns JSON - always returns an HTML snippet.
     """
-    # Query films matching the search term (title or genre)
-    matching_films = await film_dao.search(db, query=q)
-
-    # Attach average rating to each film
-    films_with_ratings = []
-    for film in matching_films:
-        avg_rating = await review_dao.average_rating(db, film.id)
-        films_with_ratings.append({
-            "film": film,
-            "average_rating": avg_rating,
-        })
+    # Single database query with outerjoin and group_by to eliminate N+1 round trips
+    films_with_ratings = await film_dao.search_with_avg_ratings(db, query=q)
 
     return templates.TemplateResponse(
         request=request,

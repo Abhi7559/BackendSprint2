@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
 from models.review import Review
+from schemas.pagination import PaginationParams, ReviewFilterParams
 
 
 class ReviewDAO:
@@ -12,6 +13,50 @@ class ReviewDAO:
     Data Access Object for Review entity.
     Encapsulates all direct database queries for Review using SQLAlchemy 2.0 async syntax.
     """
+
+    async def list_by_film_paginated(
+        self,
+        session: AsyncSession,
+        film_id: uuid.UUID,
+        filters: ReviewFilterParams,
+        pagination: PaginationParams,
+    ) -> tuple[Sequence[Review], int]:
+        """
+        List reviews for a film with offset-based pagination and rating filters.
+        Eliminates N+1 queries by using joinedload(Review.user) to fetch the reviewer in a single join query.
+        Returns a tuple of (reviews_for_page, total_count).
+        """
+        # Base query with joinedload to eliminate N+1 problem on reviewer details
+        stmt = (
+            select(Review)
+            .options(
+                joinedload(Review.user),
+                joinedload(Review.film),
+            )
+            .where(Review.film_id == film_id)
+        )
+
+        # Dynamic filtering on ratings
+        if filters.min_rating is not None:
+            stmt = stmt.where(Review.rating >= filters.min_rating)
+        if filters.max_rating is not None:
+            stmt = stmt.where(Review.rating <= filters.max_rating)
+
+        # Total count without fetching all records
+        count_stmt = select(func.count()).select_from(stmt.subquery())
+        total_result = await session.execute(count_stmt)
+        total = total_result.scalar() or 0
+
+        # Paginate with OFFSET & LIMIT
+        stmt = (
+            stmt.order_by(Review.created_at.desc(), Review.id.asc())
+            .offset(pagination.offset)
+            .limit(pagination.page_size)
+        )
+
+        result = await session.execute(stmt)
+        reviews = result.scalars().all()
+        return reviews, total
 
     async def list_by_film(self, session: AsyncSession, film_id: uuid.UUID) -> Sequence[Review]:
         """

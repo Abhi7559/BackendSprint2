@@ -28,6 +28,18 @@ class ReviewService:
     async def get_reviews_by_film_id(self, session: AsyncSession, film_id: UUID) -> Sequence[Review]:
         return await review_dao.list_by_film(session, film_id)
 
+    async def get_reviews_paginated(
+        self,
+        session: AsyncSession,
+        film_id: UUID,
+        filters,
+        pagination,
+    ) -> tuple[Sequence[Review], int]:
+        film = await film_dao.get_by_id(session, film_id)
+        if not film:
+            raise FilmNotFoundError(film_id=film_id)
+        return await review_dao.list_by_film_paginated(session, film_id, filters, pagination)
+
     async def get_review_by_id(self, session: AsyncSession, review_id: UUID) -> Review:
         review = await review_dao.get_by_id(session, review_id)
         if not review:

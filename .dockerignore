@@ -1,10 +1,40 @@
+# Python / virtual environment
 .venv
+venv/
+ENV/
+env/
 __pycache__
-*.pyc
-*.pyo
+*.py[cod]
+*$py.class
 *.pyd
+
+# Git & GitHub
 .git
+.gitignore
 .github
+
+# Testing, type-checking, and coverage reports (cache only)
 .pytest_cache
 .mypy_cache
+.coverage
+htmlcov/
+.coverage.*
+
+# Environment variables & secrets
 .env
+.env.*
+!.env.example
+
+# IDE & OS artefacts
+.vscode
+.idea
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Frontend workspace (built separately in its own container)
+frontend/
+node_modules/
+.next/
+

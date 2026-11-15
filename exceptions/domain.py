@@ -31,7 +31,7 @@ class DuplicateReviewError(DomainError):
     def __init__(self, user_id: object, film_id: object):
         self.user_id = user_id
         self.film_id = film_id
-        super().__init__(f"User {user_id} has already reviewed film {film_id}.")
+        super().__init__("You have already reviewed this film.")
 
 
 class UnauthorisedReviewAccessError(DomainError):

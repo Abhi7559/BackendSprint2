@@ -11,7 +11,15 @@ wheels/
 
 # Environment variables
 .env
+.env*.local
 
-# Cache directories
+# Cache and coverage directories
 .mypy_cache/
 .pytest_cache/
+.coverage
+htmlcov/
+
+# Frontend builds and node_modules
+frontend/node_modules/
+frontend/.next/
+

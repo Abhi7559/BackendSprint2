@@ -11,8 +11,9 @@
                 <span>★</span>
                 <span>
                     {% if item.average_rating is not none %}
-                        {{ "%.1f"|format(item.average_rating) }} / 5
+                        {{ "%.1f"|format([item.average_rating, 5.0]|min) }} / 5
                     {% else %}
+
                         No ratings yet
                     {% endif %}
                 </span>

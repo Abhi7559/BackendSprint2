@@ -16,6 +16,15 @@ class ReviewHandler:
     async def get_reviews_by_film_id(self, session: AsyncSession, film_id: UUID) -> Sequence[Review]:
         return await review_service.get_reviews_by_film_id(session, film_id)
 
+    async def get_reviews_paginated(
+        self,
+        session: AsyncSession,
+        film_id: UUID,
+        filters,
+        pagination,
+    ) -> tuple[Sequence[Review], int]:
+        return await review_service.get_reviews_paginated(session, film_id, filters, pagination)
+
     async def get_average_rating(self, session: AsyncSession, film_id: UUID) -> float | None:
         return await review_service.get_average_rating(session, film_id)
 

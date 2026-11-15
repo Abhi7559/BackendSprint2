@@ -59,13 +59,16 @@ def require_role(*allowed_roles: str):
     async def role_checker(
         current_user: dict[str, Any] = Depends(get_current_user),
     ) -> dict[str, Any]:
-        user_role = current_user.get("role")
+        user_role = (current_user.get("role") or "").lower()
         # Allowed roles can be strings or UserRole enum values
-        role_strings = [r.value if hasattr(r, "value") else str(r) for r in allowed_roles]
+        role_strings = [
+            (r.value if hasattr(r, "value") else str(r)).lower()
+            for r in allowed_roles
+        ]
         if user_role not in role_strings:
             from exceptions.domain import ForbiddenError
             raise ForbiddenError(
-                f"Role '{user_role}' does not have permission. Allowed roles: {', '.join(role_strings)}."
+                f"Role '{current_user.get('role')}' does not have permission. Allowed roles: {', '.join(role_strings)}."
             )
         return current_user
 

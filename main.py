@@ -43,15 +43,47 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+from time import perf_counter
+from fastapi.middleware.cors import CORSMiddleware
+
 # Register centralized domain exception handlers
 register_exception_handlers(app)
 
+# 1. CORS Configuration: Permit ONLY http://localhost:3000 (No wildcards)
+# Only methods and headers needed by the frontend are explicitly allowed
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["Content-Type", "Authorization", "X-Request-ID", "X-Trace-ID"],
+    expose_headers=["X-Request-ID", "X-Trace-ID", "X-Process-Time-Ms"],
+)
 
+
+
+
+# 2. Response-Time Middleware: Measures total duration in milliseconds
+@app.middleware("http")
+async def response_time_middleware(request: Request, call_next) -> Response:
+    """
+    Measures the total processing time of each request and appends it
+    to the response as 'X-Process-Time-Ms' in milliseconds.
+    """
+    start_time = perf_counter()
+    response = await call_next(request)
+    duration_ms = (perf_counter() - start_time) * 1000
+    response.headers["X-Process-Time-Ms"] = f"{duration_ms:.2f}"
+    return response
+
+
+# 3. Request-ID & Logging Middleware
 @app.middleware("http")
 async def request_id_logging_middleware(request: Request, call_next) -> Response:
     """
-    Middleware that ensures every request has a request_id in context
-    and injects X-Request-ID (and X-Trace-ID) headers in the response.
+    Middleware that generates/extracts a unique identifier per request,
+    attaches it to logger context (so every log entry carries it end-to-end),
+    and injects X-Request-ID and X-Trace-ID headers in the response.
     """
     header_id = request.headers.get("X-Request-ID") or request.headers.get("X-Trace-ID")
     req_id = header_id.strip() if header_id and header_id.strip() else str(uuid.uuid4())
@@ -71,6 +103,16 @@ app.include_router(users.router, prefix=api_prefix)
 
 # Server-rendered HTML UI router (completely separate from JSON API routes)
 app.include_router(ui.router)
+
+
+@app.get("/", include_in_schema=False)
+def root():
+    return {
+        "status": "online",
+        "service": "Film Review Platform API",
+        "version": settings.API_VERSION,
+        "docs_url": "/docs",
+    }
 
 
 @app.get("/health", tags=["Health"])

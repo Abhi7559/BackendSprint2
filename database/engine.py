@@ -17,3 +17,17 @@ SessionLocal = async_sessionmaker(
     autocommit=False,
     autoflush=False,
 )
+
+_session_factory = SessionLocal
+
+
+def get_session_factory():
+    """Return the active async session factory (can be swapped in tests)."""
+    return _session_factory
+
+
+def set_session_factory(factory):
+    """Override the active async session factory."""
+    global _session_factory
+    _session_factory = factory
+

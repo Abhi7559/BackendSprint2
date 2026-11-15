@@ -1,14 +1,19 @@
 services:
+  # ----------------------------------------------------------------------------
+  # 1. FastAPI Backend API Service
+  # ----------------------------------------------------------------------------
   web:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: film_review_api_day4
     ports:
-      - "8000:8000"
-    volumes:
-      - .:/app
-      - /app/.venv
+      - "${API_PORT:-8001}:8000"
+    env_file:
+      - .env
     environment:
       - PYTHONUNBUFFERED=1
+      # Points to Compose service names 'db' and 'redis' across container network
       - DATABASE_URL=postgresql+asyncpg://user:password@db:5432/film_review
       - REDIS_URL=redis://redis:6379/0
       - RUN_SEED=true
@@ -16,16 +21,51 @@ services:
       db:
         condition: service_healthy
       redis:
-        condition: service_started
-    command: ["uv", "run", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+        condition: service_healthy
+    restart: unless-stopped
 
+  # ----------------------------------------------------------------------------
+  # 2. Next.js Frontend Service
+  # ----------------------------------------------------------------------------
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        - NEXT_PUBLIC_API_URL=http://web:8000
+        - PORT=3000
+        - HOSTNAME=0.0.0.0
+    container_name: film_review_frontend_day4
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://web:8000
+      - PORT=3000
+      - HOSTNAME=0.0.0.0
+    depends_on:
+      - web
+    restart: unless-stopped
+
+  # ----------------------------------------------------------------------------
+  # 3. Redis Cache & Revocation Store
+  # ----------------------------------------------------------------------------
   redis:
     image: redis:7-alpine
     container_name: film_review_redis_day4
     ports:
       - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
     restart: unless-stopped
 
+  # ----------------------------------------------------------------------------
+  # 4. PostgreSQL Relational Database
+  # ----------------------------------------------------------------------------
   db:
     image: postgres:16-alpine
     container_name: film_review_db_day4
@@ -42,6 +82,11 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    restart: unless-stopped
 
+# ------------------------------------------------------------------------------
+# Named persistent volumes for PostgreSQL and Redis
+# ------------------------------------------------------------------------------
 volumes:
   postgres_data:
+  redis_data:
