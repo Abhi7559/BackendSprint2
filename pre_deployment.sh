@@ -6,14 +6,15 @@ echo "=========================================================="
 echo "==> [Pre-Deployment Gate] Step 1: Environment Variables"
 echo "=========================================================="
 
-# List of all mandatory environment variables
+# List of mandatory non-sensitive environment variables
+# Note: Sensitive credentials (DATABASE_PASSWORD, TOKEN_SECRET_KEY) are sourced from Secrets Manager
 REQUIRED_VARS="
-DATABASE_URL
-TOKEN_SECRET_KEY
 TOKEN_ACCESS_TOKEN_EXPIRE_MINUTES
 TOKEN_REFRESH_TOKEN_EXPIRE_DAYS
 API_VERSION
 REDIS_URL
+AWS_SECRET_ID
+AWS_SECRETS_ENDPOINT_URL
 "
 
 MISSING_VARS=""
@@ -40,12 +41,17 @@ fi
 echo "[SUCCESS] All required environment variables are present."
 
 echo "=========================================================="
-echo "==> [Pre-Deployment Gate] Step 2: Database Connectivity"
+echo "==> [Pre-Deployment Gate] Step 2: AWS Secrets Manager Check"
+echo "=========================================================="
+python pre_deployment/check_secrets.py
+
+echo "=========================================================="
+echo "==> [Pre-Deployment Gate] Step 3: Database Connectivity"
 echo "=========================================================="
 python pre_deployment/check_db.py
 
 echo "=========================================================="
-echo "==> [Pre-Deployment Gate] Step 3: Redis Connectivity"
+echo "==> [Pre-Deployment Gate] Step 4: Redis Connectivity"
 echo "=========================================================="
 python pre_deployment/check_redis.py
 

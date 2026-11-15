@@ -13,15 +13,25 @@ services:
       - .env
     environment:
       - PYTHONUNBUFFERED=1
-      # Points to Compose service names 'db' and 'redis' across container network
-      - DATABASE_URL=postgresql+asyncpg://user:password@db:5432/film_review
+      # Points to Compose service names across container network
+      - DB_USER=user
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_NAME=film_review
       - REDIS_URL=redis://redis:6379/0
+      - AWS_SECRETS_ENDPOINT_URL=http://floci:4566
+      - AWS_SECRET_ID=film-review/platform
+      - AWS_DEFAULT_REGION=us-east-1
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
       - RUN_SEED=true
     depends_on:
       db:
         condition: service_healthy
       redis:
         condition: service_healthy
+      floci:
+        condition: service_started
     restart: unless-stopped
 
   # ----------------------------------------------------------------------------
@@ -84,9 +94,29 @@ services:
       retries: 5
     restart: unless-stopped
 
+  # ----------------------------------------------------------------------------
+  # 5. Floci Local AWS Simulation (Secrets Manager, S3, SQS)
+  # ----------------------------------------------------------------------------
+  floci:
+    image: floci/floci:latest
+    container_name: film_review_floci_day4
+    ports:
+      - "4566:4566"
+      - "4500:4500"
+    environment:
+      - FLOCI_STORAGE_MODE=persisted
+      - FLOCI_STORAGE_PERSISTENT_PATH=/app/data
+      - FLOCI_HOSTNAME=floci
+      - AWS_DEFAULT_REGION=us-east-1
+    volumes:
+      - floci_data:/app/data
+      - /var/run/docker.sock:/var/run/docker.sock
+    restart: unless-stopped
+
 # ------------------------------------------------------------------------------
-# Named persistent volumes for PostgreSQL and Redis
+# Named persistent volumes for PostgreSQL, Redis, and Floci AWS
 # ------------------------------------------------------------------------------
 volumes:
   postgres_data:
   redis_data:
+  floci_data:

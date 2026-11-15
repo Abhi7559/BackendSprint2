@@ -12,6 +12,7 @@ from fastapi.responses import Response
 
 from core.config import settings
 from core.logger import set_request_id, setup_logging
+from core.secrets import get_secrets
 from exceptions.handlers import register_exception_handlers
 from routes import films, reviews, ui, users
 
@@ -27,6 +28,13 @@ setup_logging()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # Eagerly load, validate, and cache application secrets before accepting traffic
+    try:
+        get_secrets()
+    except Exception as e:
+        print(f"[FATAL] Application startup aborted: {e}", file=sys.stderr)
+        raise SystemExit(1) from e
+
     print(f"Application started - API Version: {settings.API_VERSION}")
     try:
         await init_redis()
