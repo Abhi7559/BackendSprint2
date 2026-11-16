@@ -21,6 +21,7 @@ from database.engine import engine
 import models  # noqa: F401 - ensure models are registered with Base.metadata
 
 from database.redis import close_redis, init_redis
+from services.sqs_publisher import sqs_publisher
 
 # Initialize structured JSON logging
 setup_logging()
@@ -36,6 +37,13 @@ async def lifespan(app: FastAPI):
         raise SystemExit(1) from e
 
     print(f"Application started - API Version: {settings.API_VERSION}")
+    # 1. Startup Queue Health Check (logs status, does not crash app if unavailable)
+    try:
+        sqs_publisher.check_health()
+    except Exception as e:
+        print(f"Warning: SQS queue check failed during startup: {e}")
+
+    # 2. Redis initialization
     try:
         await init_redis()
     except Exception as e:

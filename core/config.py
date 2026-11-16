@@ -52,6 +52,11 @@ class Settings(BaseSettings):
     AWS_ACCESS_KEY_ID: str = Field(default="test", description="AWS access key ID for local Floci")
     AWS_SECRET_ACCESS_KEY: str = Field(default="test", description="AWS secret access key for local Floci")
 
+    # AWS SQS Event Queue settings
+    SQS_QUEUE_NAME: str = Field(default="film-review-events", description="SQS queue name for domain events")
+    SQS_ENDPOINT_URL: str = Field(default="http://localhost:4566", description="SQS endpoint URL (Floci/AWS)")
+    SQS_QUEUE_URL: Optional[str] = Field(default=None, description="Direct SQS queue URL if known")
+
     @property
     def DATABASE_URL(self) -> str:
         """

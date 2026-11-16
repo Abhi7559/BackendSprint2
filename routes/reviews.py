@@ -5,9 +5,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from dependencies.auth import get_current_user, require_role
 from dependencies.database import get_db
+from dependencies.events import get_event_publisher
 from dependencies.trace import get_trace_id
 from exceptions.domain import UserRole
 from handlers.review_handler import review_handler
+from schemas.events import ReviewEvent
 from schemas.pagination import PaginatedResponse, PaginationParams, ReviewFilterParams
 from schemas.review import (
     ReviewCreate,
@@ -95,12 +97,14 @@ async def create_film_review(
     review: ReviewCreate,
     background_tasks: BackgroundTasks,
     db: AsyncSession = Depends(get_db),
+    publisher=Depends(get_event_publisher),
     current_user: dict = Depends(require_role(UserRole.ADMIN, UserRole.CRITIC)),
 ):
     """
     Create a new review for a film (Admins and Critics only).
-    Schedules a background task using FastAPI BackgroundTasks to recompute the denormalized
-    review_count and average_rating on the Film record without blocking the client response.
+    Schedules background tasks:
+    1. Recompute denormalized film review stats.
+    2. Publish review.created event to SQS queue without blocking the HTTP response.
     """
     created_review = await review_handler.create_review(
         session=db,
@@ -110,6 +114,14 @@ async def create_film_review(
     )
     # Schedule background recalculation
     background_tasks.add_task(_recalculate_film_stats_bg, film_id)
+
+    # Schedule background domain event publication
+    event = ReviewEvent(
+        event_type="review.created",
+        resource_id=str(created_review.id),
+    )
+    background_tasks.add_task(publisher.publish, event)
+
     return _to_review_response(created_review)
 
 
@@ -129,9 +141,15 @@ async def update_review(
     review: ReviewUpdate,
     background_tasks: BackgroundTasks,
     db: AsyncSession = Depends(get_db),
+    publisher=Depends(get_event_publisher),
     current_user: dict = Depends(require_role(UserRole.ADMIN, UserRole.CRITIC)),
 ):
-    """Update rating and/or body of a review (Admins can update any; Critics only their own)."""
+    """
+    Update rating and/or body of a review (Admins can update any; Critics only their own).
+    Schedules background tasks:
+    1. Recompute denormalized film review stats.
+    2. Publish review.updated event to SQS queue without blocking the HTTP response.
+    """
     updated = await review_handler.update_review(
         session=db,
         review_id=review_id,
@@ -140,6 +158,14 @@ async def update_review(
     )
     # Recalculate denormalized review stats in the background
     background_tasks.add_task(_recalculate_film_stats_bg, updated.film_id)
+
+    # Schedule background domain event publication
+    event = ReviewEvent(
+        event_type="review.updated",
+        resource_id=str(updated.id),
+    )
+    background_tasks.add_task(publisher.publish, event)
+
     return _to_review_response(updated)
 
 
