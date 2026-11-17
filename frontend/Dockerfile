@@ -20,9 +20,9 @@ ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL \
     NODE_ENV=production \
     SKIP_BACKEND_CHECK=true
 
-# Install dependencies first for layer caching
+# Install dependencies first for layer caching (include devDependencies so next build and tests work)
 COPY package.json package-lock.json* ./
-RUN npm install
+RUN npm install --include=dev
 
 # Copy application source code, scripts, and tests
 COPY . .
